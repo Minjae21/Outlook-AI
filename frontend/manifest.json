@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Outlook Web Assistant",
+  "version": "1.0",
+  "description": "Enhances Outlook Web with AI capabilities",
+  "permissions": ["activeTab"],
+  "host_permissions": [
+    "https://outlook.office.com/*",
+    "https://outlook.live.com/*"
+  ],
+  "content_scripts": [{
+    "matches": ["https://outlook.office.com/*", "https://outlook.live.com/*"],
+    "css": [
+      "src/css/main.css",
+      "src/css/email-tags.css"
+    ],
+    "js": [
+      "src/js/main.js",
+      "src/js/panel.js",
+      "src/js/email-tags.js"
+    ]
+  }],
+  "web_accessible_resources": [{
+    "resources": ["src/html/panel.html"],
+    "matches": ["https://outlook.office.com/*", "https://outlook.live.com/*"]
+  }]
+}
