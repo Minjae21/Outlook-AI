@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter,Depends
 from email_client import get_inbox_messages, move_message
 from parser import classify_email
 from auth import get_access_token
@@ -32,9 +32,44 @@ async def process_emails(token: str):
     return {"moved_emails": moved}
 
 def get_latest_email_id(token: str) -> str | None:
-    from email_client import get_inbox_messages  # import here to avoid circular imports
+    from email_client import get_inbox_messages
     messages = get_inbox_messages(token)
     if messages:
-        # Assuming messages are ordered newest first
         return messages[0]["id"]
     return None
+
+@email_router.get("/email-tags")
+def get_email_tags(token: str = Depends(get_access_token)):
+    import requests
+
+    folder_map = {
+        "HR": FOLDER_ID_MAP["HR"],
+        "Finance": FOLDER_ID_MAP["Finance"],
+        "Personal": FOLDER_ID_MAP["Personal"],
+        "Inbox": "inbox",
+    }
+
+    tags = []
+    headers = {"Authorization": f"Bearer {token}"}
+
+    for label, folder_id in folder_map.items():
+        url = f"https://graph.microsoft.com/v1.0/me/mailFolders/{folder_id}/messages?$top=50"
+        response = requests.get(url, headers=headers)
+        if response.status_code != 200:
+            print(f"Failed to fetch from folder {label}: {response.text}")
+            continue
+
+        messages = response.json().get("value", [])
+        for msg in messages:
+            subject = msg.get("subject", "").strip()
+            if not subject:
+                continue
+
+            tag = label if label != "Inbox" else "Other"
+
+            tags.append({
+                "subject": subject.lower().strip(),
+                "tag": tag
+            })
+
+    return tags
